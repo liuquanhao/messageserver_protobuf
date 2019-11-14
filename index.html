@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <body>
+        <p>test</p>
+        <script src="/protobuf.min.js"></script>
+        <script type="text/javascript">
+            function utf8_to_b64(str) {
+                return btoa(unescape(encodeURIComponent(str)));
+            }
+            function Uint8ArrayToString(fileData){
+              var dataString = "";
+              for (var i = 0; i < fileData.length; i++) {
+                dataString += String.fromCharCode(fileData[i]);
+              }
+              return dataString
+            }
+            protobuf.load("Packet.proto", function(err, root) {
+                if (err)
+                    throw err;
+               var ws = new WebSocket('ws://192.168.1.155:9502');
+               ws.binaryType = "arraybuffer";
+               ws.onopen = function () {
+                   // 创建发送者
+                   var pb_sender = root.lookupType("MessageServer.Message.ProtoBufMessage.Sender");
+                   var obj_sender = {"uid": 222, "nick": "都好得很222"};
+                   var data_sender = pb_sender.create(obj_sender);
+
+                   // create reciever
+                   var pb_receiver = root.lookupType("MessageServer.Message.ProtoBufMessage.Receiver");
+                   var obj_receiver = {"users": [0]};
+                   var data_receiver = pb_receiver.create(obj_receiver);
+
+                   // create extraInfo
+                   var pb_extra_info = root.lookupType("MessageServer.Message.ProtoBufMessage.ExtraInfo");
+                   var obj_extra_info = {"sendTime": Math.ceil(+new Date/1000)};
+                   var data_extra_info = pb_extra_info.create(obj_extra_info);
+
+                   // login command
+                   var pb_payload = root.lookupType("MessageServer.Message.ProtoBufMessage.Payload");
+                   // login struct
+                   var obj_login = {"ucode": 1569018194, "udata": "c4acb7d4b63f350c63899d5b3ba55a74e8555c40"}
+                   var obj_payload = {"dataType": 3, "dataList": [obj_login]};
+                   var data_payload = pb_payload.create(obj_payload);
+
+                   // create packet
+                   var pb_packet = root.lookupType("Packet");
+                   var obj_packet = {"sender": data_sender, "payload": data_payload, "extraInfo": data_extra_info};
+                   var data_packet = pb_packet.create(obj_packet);
+                   var buf_packet = pb_packet.encode(data_packet).finish();
+                   console.log(pb_packet.decode(buf_packet));
+                   ws.send(buf_packet);
+
+                   // state struct
+                   // var pb_state = root.lookupType("MessageServer.Message.ProtoBufMessage.Data");
+                   // var obj_state = {"ucode": 0, "udata": "错误！"};
+                   // var obj_payload = {"dataType": 1, "dataList": [obj_state]};
+                   // data_payload = pb_payload.create(obj_payload);
+                   // var buf_payload = pb_payload.encode(data_payload).finish();
+
+                   // command struct
+                   var gid = '123';
+                   var ab = new ArrayBuffer(4);
+                   var dv = new DataView(ab);
+                   dv.setUint32(0, gid);
+                   var u8 = new Uint8Array(ab);
+                   //var u8 = btoa(unescape(encodeURIComponent('')));
+                   var gid2 = '111';
+                   var ab = new ArrayBuffer(4);
+                   var dv = new DataView(ab);
+                   dv.setUint32(0, gid2);
+                   var u82 = new Uint8Array(ab);
+                   //var u8 = btoa(unescape(encodeURIComponent('')));
+                   var obj_command1 = {"udata": "get_client_info", "ucode": 1, "extraData": [u8, u82]};
+                   var obj_payload = {"dataType": 2, "dataList": [obj_command1]};
+                   data_payload = pb_payload.create(obj_payload);
+                   obj_packet = {"receiver": data_receiver, "payload": data_payload, "extraInfo": data_extra_info};
+                   data_packet = pb_packet.create(obj_packet);
+                   buf_packet = pb_packet.encode(data_packet).finish();
+                   console.log(pb_packet.decode(buf_packet));
+                   ws.send(buf_packet);
+
+                   // join_group struct
+                   //var obj_join_group = {"ucode": "123"};
+                   //var obj_payload = {"dataType": 5, "dataList": [obj_join_group]};
+                   //data_payload = pb_payload.create(obj_payload);
+
+                   //obj_packet = {"payload": data_payload, "extraInfo": data_extra_info};
+                   //data_packet = pb_packet.create(obj_packet);
+                   //buf_packet = pb_packet.encode(data_packet).finish();
+                   //console.log(pb_packet.decode(buf_packet));
+                   //ws.send(buf_packet);
+
+                   // message struct
+                   //var obj_message = {"ucode": 0, "udata": "hello,世界"};
+                   //var obj_payload = {"dataType": 1, "dataList": [obj_message]};
+                   //data_payload = pb_payload.create(obj_payload);
+                   // create packet
+                   //var pb_packet = root.lookupType("Packet");
+                   //obj_packet = {"receiver": data_receiver, "payload": data_payload, "extraInfo": data_extra_info};
+                   //data_packet = pb_packet.create(obj_packet);
+                   //buf_packet = pb_packet.encode(data_packet).finish();
+                   //console.log(pb_packet.decode(buf_packet));
+                   //ws.send(buf_packet);
+               }
+               ws.onmessage = function (evt) {
+                   var buf = new Uint8Array(evt.data);
+                   var packet = root.lookupType("Packet");
+                   var data_packet = packet.decode(buf);
+                   console.log(data_packet);
+               }
+               ws.onclose = function () {
+               }
+
+            });
+        </script>
+    </body>
+</html>
